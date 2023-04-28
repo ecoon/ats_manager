@@ -10,25 +10,15 @@ proc ModulesHelp {{ }} {{
 module-whatis   "Amanzi {amanzi} {build_type} build"
 # #############################################################################
 
-{modulefiles}
-
-setenv MPI_DIR {mpi_dir}
-
-setenv AMANZI_TPLS_DIR {tpls_dir}
-setenv AMANZI_TPLS_BUILD_DIR {tpls_build_dir}
-setenv AMANZI_TPLS_CONFIG {tpls_dir}/share/cmake/amanzi-tpl-config.cmake
+module load {tpls_modulefile}
 
 setenv AMANZI_SRC_DIR {amanzi_src_dir}
 setenv AMANZI_BUILD_DIR {amanzi_build_dir}
 setenv AMANZI_DIR {amanzi_dir}
 
-setenv AMANZI_TPLS_BUILD_TYPE {tpls_build_type}
-setenv AMANZI_TRILINOS_BUILD_TYPE {trilinos_build_type}
 setenv AMANZI_BUILD_TYPE {build_type}
 
-prepend-path    PATH            {tpls_dir}/bin
 prepend-path    PATH            {amanzi_dir}/bin
-prepend-path    PYTHONPATH      {tpls_dir}/SEACAS/lib
 prepend-path    PYTHONPATH      {amanzi_src_dir}/tools/amanzi_xml
 
 
