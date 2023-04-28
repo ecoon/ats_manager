@@ -8,97 +8,69 @@ ats_demos_url = _amanzi_url_template.format('ats-demos')
 valid_build_types = ['debug', 'opt', 'relwithdebinfo']
 ats_submodule = 'src/physics/ats'
 
+def _clean(instr):
+    outstr = instr.replace('/', '-')
+    outstr = outstr.replace(' ', '_')
+    return outstr
 
-def filename(amanzi_name, ats_name, machine, compilers, build_type, prefix=None):
-    """Returns a unique filename for identifying installations."""
-    if compilers is None:
-        compilers = ''
-    if machine is None:
-        machine = ''
 
-    if ats_name is None:
-        if prefix is None:
-            prefix = 'amanzi'
-        return '{}/{}/{}/{}/{}'.format(prefix,
-                                       amanzi_name.replace('/', '-'),
-                                       machine.replace('/', '-'),
-                                       compilers.replace('/','-'),
-                                       build_type.replace('/','-'))
-    else:
-        if prefix is None:
-            prefix = 'ats'
-        if ats_name == amanzi_name:
-            return '{}/{}/{}/{}/{}'.format(prefix,
-                                        ats_name.replace('/', '-'),
-                                        machine.replace('/', '-'),
-                                        compilers.replace('/','-'),
-                                        build_type.replace('/','-'))
-        else:
-            return '{}/{}+{}/{}/{}/{}'.format(prefix,
-                                           amanzi_name.replace('/', '-'),
-                                           ats_name.replace('/', '-'),
-                                           machine.replace('/', '-'),
-                                           compilers.replace('/','-'),
-                                           build_type.replace('/','-'))
-        
-def split_filename(name):
-    """Splits a unique filename into its components."""
-    split = name.split('/')
-    if split[0] == 'amanzi':
-        return split[1],None,split[2], split[3], split[4]
-    elif split[0] == 'ats':
-        names = split[1].split('+')
-        if len(names) == 1:
-            return split[1], split[1], split[2], split[3], split[4]
-        else:
-            return names[0], names[1], split[2], split[3], split[4]
-
-        
-def unique_string(amanzi_name, ats_name, machine, compilers, build_type):
-    """Creates a unique (non-filename) string to identify an installation."""
-    return filename(amanzi_name,ats_name,machine, compilers, build_type).replace('/','-')
-
-def tpls_name(name):
-    name_split = split_filename(name)
-    assert(len(name_split) == 5)
-    if name_split[1] is None:
-        inner_name = name_split[0]
-    else:
-        inner_name = name_split[0]+'-'+name_split[1]
-    return '/'.join(['amanzi-tpls',inner_name, name_split[2], name_split[3], name_split[4]])
-
+def _find_version(fid, kind):
+    startstr = f'set(AMANZI_TPLS_VERSION_{kind.upper()}'
+    line = next(l.strip() for l in fid if l.strip().startswith(startstr))
+    line = line[len(startstr):].strip()
+    version = line.split(')')[0].strip()
+    return version
+    
+    
 # paths to useful places
-def amanzi_src_dir(name):
+def amanzi_src_dir(kind, version):
+    return os.path.join(os.environ['ATS_BASE'], kind, 'repos', version)
+
+def ats_src_dir(version):
+    return os.path.join(amanzi_src_dir('ats', version), 'src', 'physics', 'ats')
+
+def tpls_src_dir(kind, version):
+    return os.path.join(amanzi_src_dir(kind, version), 'config', 'SuperBuild')
+
+def ats_regression_tests_dir(version):
+    return os.path.join(ats_src_dir('ats', version), 'testing', 'ats-regression-tests')
+
+def tools_mpi_dir(vendor):
+    return os.path.join(os.environ['ATS_BASE'], 'tools', 'install', vendor)
+
+def tpls_version(kind, version):
+    """Given an Amanzi or ATS version, find the TPLs version."""
+    tpl_versions_file = os.path.join(tpls_src_dir(kind, version), 'TPLVersions.cmake')
+    with open(tpl_versions_file, 'r') as fid:
+        major = _find_version(fid, 'major')
+        minor = _find_version(fid, 'minor')
+        patch = _find_version(fid, 'patch')
+    return f'{major}.{minor}.{patch}'
+
+# names are fully qualified combination of kind, version, machine,
+# compilers, and build type
+def name(kind, version, machine, compilers, build_type):
+    """Returns a unique name for identifying installations."""
+    arglist = [_clean(kind), _clean(version)]
+
+    if machine is not None: arglist.append(_clean(machine))
+    if compilers is not None: arglist.append(_clean(compilers))
+    if build_type is not None: arglist.append(_clean(build_type))
+
+    return os.path.join(arglist)
+        
+def install_dir(name):
     name_trip = name.split('/')
-    return os.path.join(os.environ['ATS_BASE'], name_trip[0], 'repos', name_trip[1])
+    args = [os.environ['ATS_BASE'], name_trip[0], 'install'] + name_trip[1:]
+    return os.path.join(*args)
 
-def amanzi_install_dir(name):
+def build_dir(name):
     name_trip = name.split('/')
-    return os.path.join(os.environ['ATS_BASE'], name_trip[0], 'install', name_trip[1], name_trip[2], name_trip[3], name_trip[4])
-
-def amanzi_build_dir(name):
-    name_trip = name.split('/')
-    return os.path.join(os.environ['ATS_BASE'], name_trip[0], 'build', name_trip[1], name_trip[2], name_trip[3], name_trip[4])
-
-def ats_src_dir(name):
-    return os.path.join(amanzi_src_dir(name), ats_submodule)
-
-def ats_regression_tests_dir(name):
-    src_dir = ats_src_dir(name)
-    return os.path.join(src_dir, 'testing', 'ats-regression-tests')
-
-def tpls_build_dir(name):
-    tpls_trip = name.split('/')
-    return os.path.join(os.environ['ATS_BASE'], tpls_trip[0], 'build', tpls_trip[1], tpls_trip[2], tpls_trip[3], tpls_trip[4])
-
-def tpls_install_dir(name):
-    tpls_trip = name.split('/')
-    return os.path.join(os.environ['ATS_BASE'], tpls_trip[0], 'install', tpls_trip[1], tpls_trip[2], tpls_trip[3], tpls_trip[4])
+    args = [os.environ['ATS_BASE'], name_trip[0], 'build'] + name_trip[1:]
+    return os.path.join(*args)
 
 def modulefile_path(name):
     return os.path.join(os.environ['ATS_BASE'], 'modulefiles', name)
 
-def tools_mpi_dir(vendor):
-    return os.path.join(os.environ['ATS_BASE'], 'tools', 'install', vendor)
 
 

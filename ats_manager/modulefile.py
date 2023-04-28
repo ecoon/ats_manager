@@ -21,7 +21,8 @@ def fill_template(file_in, file_out, substitutions):
 
 
 def tpls_modulefile_args(tpls_name,
-                         repo_name,
+                         repo_kind,
+                         repo_version,
                          tpls_build_type='opt',
                          trilinos_build_type='opt',
                          modulefiles=None,
@@ -36,15 +37,15 @@ def tpls_modulefile_args(tpls_name,
     else:
         temp_pars['modulefiles'] = ''
 
-    temp_pars['tpls_src_dir'] = names.tpls_src_dir(repo_name)
-    temp_pars['tpls_build_dir'] = names.tpls_build_dir(tpls_name)    
-    temp_pars['tpls_dir'] = names.tpls_install_dir(tpls_name)
+    temp_pars['tpls_src_dir'] = names.amanzi_src_dir(repo_kind,repo_version)
+    temp_pars['tpls_build_dir'] = names.build_dir(tpls_name)    
+    temp_pars['tpls_dir'] = names.install_dir(tpls_name)
     return temp_pars
     
 
 def modulefile_args(kind,
                     name,
-                    repo_name,
+                    repo_version,
                     tpls_modulefile,
                     build_type='opt',
                     **kwargs):
@@ -52,18 +53,18 @@ def modulefile_args(kind,
     temp_pars['amanzi'] = name
     temp_pars['build_type'] = build_type
     temp_pars['tpls_modulefile'] = tpls_modulefile
-    temp_pars['amanzi_src_dir'] = names.amanzi_src_dir(repo_name)
+    temp_pars['amanzi_src_dir'] = names.amanzi_src_dir(repo_version)
     temp_pars['amanzi_build_dir'] = names.amanzi_build_dir(name)
     temp_pars['amanzi_dir'] = names.amanzi_install_dir(name)
 
     if kind == 'ats':
         temp_pars['ats'] = name
-        temp_pars['ats_src_dir'] = names.ats_src_dir(repo_name)
+        temp_pars['ats_src_dir'] = names.ats_src_dir(repo_version)
         temp_pars['ats_regression_tests_dir'] = names.ats_regression_tests_dir(name)
     return temp_pars
     
 
-def template_path(kind):
+def _template_path(kind):
     """Returns the name of the template to be filled."""
     return os.path.join(os.environ['ATS_BASE'],'ats_manager','share',
                             'templates',f'{kind}_modulefile.template')
@@ -72,18 +73,18 @@ def template_path(kind):
 def create_tpls_modulefile(tpls_name, repo_name, **kwargs):
     """Sets up the name of the modulefile to be created.  Note this also
     creates the subdirectory containing that file, if needed."""
-    outfile = names.tpls_modulefile_path(tpls_name)
+    outfile = names.modulefile_path(tpls_name)
     outfile_dir = os.path.join(*os.path.split(outfile)[:-1])
     os.makedirs(outfile_dir, exist_ok=True)
 
     temp_pars = tpls_modulefile_args(tpls_name, repo_name, **kwargs)
-    template = template_path('tpls')
+    template = _template_path('tpls')
 
     fill_template(template, outfile, temp_pars)
     return temp_pars
 
 
-def create_modulefile(name, repo_name, tpls_name, **kwargs):
+def create_modulefile(name, repo_version, tpls_name, **kwargs):
     """Sets up the name of the modulefile to be created.  Note this also
     creates the subdirectory containing that file, if needed."""
     outfile = names.modulefile_path(name)
@@ -91,8 +92,8 @@ def create_modulefile(name, repo_name, tpls_name, **kwargs):
     os.makedirs(outfile_dir, exist_ok=True)
 
     kind = name.split('/')[0]
-    temp_pars = modulefile_args(kind, name, repo_name, tpls_name, **kwargs)
-    template = template_path(kind)
+    temp_pars = modulefile_args(kind, name, repo_version, tpls_name, **kwargs)
+    template = _template_path(kind)
 
     fill_template(template, outfile, temp_pars)
     return temp_pars

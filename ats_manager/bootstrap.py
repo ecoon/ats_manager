@@ -174,7 +174,6 @@ echo "-----------------------------------------------------"
 exit $?
 """ 
 def bootstrap_amanzi(module_name,
-                     compilers='mpi',
                      enable_structured=False,
                      enable_geochemistry=True,
                      bootstrap_options=None,
