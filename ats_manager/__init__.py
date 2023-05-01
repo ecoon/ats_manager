@@ -8,24 +8,12 @@ import ats_manager.modulefile as modulefile
 import ats_manager.bootstrap as bootstrap
 import ats_manager.test_runner as test_runner
 import ats_manager.clean as ats_clean
+import ats_manager.utils as utils
 
 from ats_manager.ui import *
 
-def install_ats(build_name,
-                amanzi_branch=None, ats_branch=None,
-                new_amanzi_branch=None, new_ats_branch=None,
-                repo_version=None,
-                build_type='debug',
-                tpls_build_type='debug',
-                machine=None,
-                compiler_id=None,
-                mpi_wrapper_kind=None,
-                modulefiles=None,
-                skip_amanzi_tests=False,
-                skip_ats_tests=False,
-                skip_clone=False,
-                clobber=False,
-                **kwargs):
+
+def install_ats(args):
     """Create a new ATS installation.
 
     Creates a modulefile, clones the repos, bootstraps the code, and
@@ -42,105 +30,60 @@ def install_ats(build_name,
     str : name of the generated modulefile
 
     """
+    args.repo_kind = 'ats'
+    if args.repo is None:
+        args.repo = args.build_name
+    
     logging.info('Installing ATS:')
     logging.info('=============================================================================')
-    logging.info('ATS name: {}'.format(ats_name))
-    logging.info('ATS branch: {}'.format(ats_branch))
-    logging.info('Amanzi branch: {}'.format(amanzi_branch))
-    logging.info('ATS new branch: {}'.format(new_ats_branch))
-    logging.info('Amanzi new branch: {}'.format(new_amanzi_branch))
-    logging.info('Repo version: {}'.format(repo_version))
+    logging.info('ATS name: {}'.format(args.build_name))
+    logging.info('Repo version: {}'.format(args.repo))
+    logging.info('ATS branch: {}'.format(args.ats_branch))
+    logging.info('Amanzi branch: {}'.format(args.amanzi_branch))
+    logging.info('ATS new branch: {}'.format(args.new_ats_branch))
+    logging.info('Amanzi new branch: {}'.format(args.new_amanzi_branch))
+    build_name = names.name('ats', args.build_name, args.machine, args.compiler_id, args.build_type)
 
-    # argument processing
-    if modulefiles is None:
-        modulefiles = []
-    if compiler_id is None:
-        compiler_id = 'default'
-    if machine is None:
-        machine = 'local'
-    name_args = [machine, compiler_id, build_type]
-    
     # repository setup
     logging.info('-----------------------------------------------------------------------------')
-    amanzi_repo = names.amanzi_src_dir('ats', repo_version)
-    logging.info(f'Setting up repo at: {amanzi_repo}')
-    logging.info(f'   clone = {skip_cone}, clobber = {clobber}')
-    
-    if skip_clone:
-        amanzi_repo = git.Repo(amanzi_repo)
-    else:
-        if clobber:
-            logging.info(f'   clobbering dir: {amanzi_repo}')
-            ats_clean.remove_dir(amanzi_repo, True)
-        logging.info(f'   switching to branches: {amanzi_branch}, {ats_branch}')
-        amanzi_repo = repo.clone_amanzi_ats(amanzi_repo, amanzi_branch, ats_branch)
-
-    if new_amanzi_branch is not None:
-        logging.info(f'   creating Amanzi branch: {new_amanzi_branch}')
-        amanzi_repo.git.checkout('-b', new_amanzi_branch)
-    if new_ats_branch is not None:
-        logging.info(f'   creating ATS branch: {new_ats_branch}')
-        amanzi_repo.submodule(names.ats_submodule).module().git.checkout('-b', new_ats_branch)
+    repo.get_repo(args.repo_kind,
+                  args.repo,
+                  skip_clone=args.skip_clone,
+                  clobber=args.clobber,
+                  amanzi_branch=args.amanzi_branch,
+                  ats_branch=args.ats_branch,
+                  new_amanzi_branch=args.new_amanzi_branch,
+                  new_ats_branch=args.new_ats_branch)
 
     # TPL setup
     logging.info('-----------------------------------------------------------------------------')
-    tpls_version = names.tpls_version('ats', repo_version)
-    tpls_name = names.name('amanzi-tpls', tpls_version, machine, compiler_id, tpls_build_type)
-    logging.info(f'Checking for TPLs at: {tpls_name}')
-
-    rc, tpls_name = install_tpls(tpls_version,
-                             'ats',
-                             repo_version,
-                             tpls_build_type,
-                             machine,
-                             compiler_id,
-                             mpi_wrapper_kind,
-                             modulefiles)
-    if rc < 0:
-        return rc, tpls_name
+    args.enable_structured = False
+    rc, tpls_name = _check_or_install_tpls(args)
+    if rc != 0: return rc, tpls_name
 
     # modulefile setup
-    build_name = names.name('ats', build_name, *name_args)
-
     logging.info('-----------------------------------------------------------------------------')
     logging.info('Generating module file:')    
     logging.info('  Fully resolved name: {}'.format(build_name))
-
-    template_params = modulefile.create_modulefile(build_name, repo_version, tpls_name,
-                                 build_type=build_type)
+    template_params = modulefile.create_modulefile(build_name, args.repo, tpls_name,
+                                                   args.build_type)
                                  
     # bootstrap
+    logging.info('-----------------------------------------------------------------------------')
     logging.info('Calling bootstrap:')
     # bootstrap, make, install
-    rc = bootstrap.bootstrap_ats(build_name, **kwargs)
-    if rc != 0:
-        return -1, build_name
+    rc = bootstrap.bootstrap_ats(build_name, args)
+    if rc != 0: return rc, build_name
 
     # amanzi make tests
-    if skip_amanzi_tests:
-        amanzi_unittests_rc = 0
-    else:
+    if not args.skip_amanzi_tests:
         logging.info('Running tests:')
-        amanzi_unittests_rc = test_runner.amanziUnitTests(name)
-        if amanzi_unittests_rc != 0:
-            rc += 1
-    return rc, name
+        rc = test_runner.amanziUnitTests(name)
+
+    return rc, build_name
 
 
-def install_amanzi(build_name,
-                   amanzi_branch=None,
-                   new_amanzi_branch=None,
-                   repo_version=Noen,
-                   build_type='debug',
-                   tpls_build_type='debug',
-                   machine=None,
-                   compiler_id=None,
-                   mpi_wrapper_kind=None,
-                   modulefiles=None,
-                   skip_amanzi_tests=False,
-                   skip_clone=False,
-                   clobber=False,
-                   **kwargs):
+def install_amanzi(args):
     """Create a new Amanzi installation.
 
     Creates a modulefile, clones the repos, bootstraps the code, and
@@ -157,87 +100,107 @@ def install_amanzi(build_name,
     str : name of the generated modulefile
 
     """
+    args.repo_kind = 'amanzi'
+    if args.repo is None:
+        args.repo = args.build_name
+
     logging.info('Installing Amanzi:')
     logging.info('=============================================================================')
-    logging.info('Amanzi name: {}'.format(amanzi_name))
-    logging.info('Amanzi branch: {}'.format(amanzi_branch))
-    logging.info('Amanzi new branch: {}'.format(new_amanzi_branch))
-    logging.info('Repo version: {}'.format(repo_version))
-
-    # argument processing
-    if modulefiles is None:
-        modulefiles = []
-    if compiler_id is None:
-        compiler_id = 'default'
-    if machine is None:
-        machine = 'local'
-    name_args = [machine, compiler_id, build_type]
+    logging.info('Amanzi name: {}'.format(args.amanzi_name))
+    logging.info('Repo version: {}'.format(args.repo))
+    logging.info('Amanzi branch: {}'.format(args.amanzi_branch))
+    logging.info('Amanzi new branch: {}'.format(args.new_amanzi_branch))
+    build_name = names.name('amanzi', args.build_name, args.machine,
+                            args.compiler_id, args.build_type)
 
     # repository setup
     logging.info('-----------------------------------------------------------------------------')
-    amanzi_repo = names.amanzi_src_dir('amanzi', repo_version)
-    logging.info(f'Setting up repo at: {amanzi_repo}')
-    logging.info(f'   clone = {skip_cone}, clobber = {clobber}')
-    
-    if skip_clone:
-        amanzi_repo = git.Repo(amanzi_repo)
-    else:
-        if clobber:
-            logging.info(f'   clobbering dir: {amanzi_repo}')
-            ats_clean.remove_dir(amanzi_repo, True)
-        logging.info(f'   switching to branches: {amanzi_branch}')
-        amanzi_repo = repo.clone_amanzi(amanzi_repo, amanzi_branch)
-
-    if new_amanzi_branch is not None:
-        logging.info(f'   creating Amanzi branch: {new_amanzi_branch}')
-        amanzi_repo.git.checkout('-b', new_amanzi_branch)
+    repo.get_repo(args.repo_kind,
+                  args.repo,
+                  skip_clone=args.skip_clone,
+                  clobber=args.clobber,
+                  amanzi_branch=args.amanzi_branch,
+                  ats_branch=None,
+                  new_amanzi_branch=args.new_amanzi_branch,
+                  new_ats_branch=None)
 
     # TPL setup
     logging.info('-----------------------------------------------------------------------------')
-    tpls_version = names.tpls_version('amanzi', repo_version)
-    tpls_name = names.name('amanzi-tpls', tpls_version, machine, compiler_id, tpls_build_type)
-    logging.info(f'Checking for TPLs at: {tpls_name}')
-
-    rc, tpls_name = install_tpls(tpls_version,
-                             'amanzi',
-                             repo_version,
-                             tpls_build_type,
-                             machine,
-                             compiler_id,
-                             mpi_wrapper_kind,
-                             modulefiles)
-    if rc < 0:
-        return rc, tpls_name
-
+    rc, tpls_name = _check_or_install_tpls(args)
+    if rc != 0: return rc, tpls_name
 
     # modulefile setup
-    build_name = names.name('amanzi', build_name, *name_args)
-
     logging.info('-----------------------------------------------------------------------------')
     logging.info('Generating module file:')    
     logging.info('  Fully resolved name: {}'.format(build_name))
+    template_params = modulefile.create_modulefile(build_name, args.repo, tpls_name,
+                                                   args.build_type)
 
-    template_params = modulefile.create_modulefile(build_name, repo_version, tpls_name,
-                                 build_type=build_type)
-                                 
     # bootstrap
+    logging.info('-----------------------------------------------------------------------------')
     logging.info('Calling bootstrap:')
     # bootstrap, make, install
-    rc = bootstrap.bootstrap_amanzi(build_name, **kwargs)
-    if rc != 0:
-        return -1, build_name
+    rc = bootstrap.bootstrap_amanzi(build_name, args)
+    if rc != 0: return rc, build_name
 
     # amanzi make tests
-    if skip_amanzi_tests:
-        amanzi_unittests_rc = 0
-    else:
+    if not args.skip_amanzi_tests:
         logging.info('Running tests:')
-        amanzi_unittests_rc = test_runner.amanziUnitTests(name)
-        if amanzi_unittests_rc != 0:
-            rc += 1
-    return rc, name
+        rc = test_runner.amanziUnitTests(name)
+
+    return rc, build_name
 
 
+def install_tpls(args):
+    """Check for and create a new TPLs installation."""
+    logging.info('Installing TPLs:')
+    logging.info('=============================================================================')
+    logging.info('TPLs version: {}'.format(args.tpls_version))
+    logging.info('Repo version: {}/{}'.format(args.repo_kind, args.repo))
+
+    assert(args.tpls_build_type is not None)
+    if args.trilinos_build_type is None:
+        args.trilinos_build_type = args.tpls_build_type
+    
+    tpls_name = names.name('amanzi-tpls', args.tpls_version,
+                           args.machine, args.compiler_id, args.trilinos_build_type)
+
+    # make the modulefile
+    logging.info('-----------------------------------------------------------------------------')
+    logging.info('Generating module file:')    
+    logging.info(f'  Fully resolved name: {tpls_name}')
+    modulefile.create_tpls_modulefile(tpls_name, args.repo_kind, args.repo,
+                                      tpls_build_type=args.tpls_build_type,
+                                      trilinos_build_type=args.trilinos_build_type,
+                                      modulefiles=args.modulefiles)
+
+    # bootstrap
+    logging.info('-----------------------------------------------------------------------------')
+    logging.info('Calling bootstrap:')
+    rc = bootstrap.bootstrap_tpls(tpls_name, args)
+    return rc, tpls_name
+
+
+def _check_or_install_tpls(args):
+    tpls_version = names.tpls_version(args.repo_kind, args.repo)
+    if args.tpls_build_type is None:
+        args.tpls_build_type = args.build_type
+
+    tpls_name = names.name('amanzi-tpls', tpls_version,
+                           args.machine, args.compiler_id, args.tpls_build_type)
+    tpls_install_dir = names.install_dir(tpls_name)
+    tpls_config_file = os.path.join(tpls_install_dir, 'share', 'cmake', 'amanzi-tpl-config.cmake')
+    logging.info(f'Checking for TPLs at: {tpls_config_file}')
+
+    if os.path.isfile(tpls_config_file):
+        logging.info('  FOUND... using existing TPLs')
+        return 0, tpls_name
+    else:
+        args.tpls_version = tpls_version
+        if not hasattr(args, 'tpls_build_type'):
+            args.tpls_build_type = None
+        return install_tpls(args)
+    
 
 def clean(module_name, remove=False, force=False):
     """Cleans or completely removes a build.

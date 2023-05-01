@@ -1,11 +1,13 @@
 import os,stat,sys
 import subprocess
 import logging
-import ats_manager.names as names
 
+import ats_manager.names as names
+from ats_manager.config import config
 
 def script_name(prefix, name):
-    return '{}-{}.sh'.format(prefix,names.unique_string(*names.split_filename(name)))
+    return names.clean(prefix+'-'+name+'.sh')
+
 
 def run_cmd(prefix, name, cmd):
     script = script_name(prefix, name)
@@ -13,7 +15,9 @@ def run_cmd(prefix, name, cmd):
     with open(outfile,'w') as fid:
         fid.write(cmd)
     os.chmod(outfile, stat.S_IRWXU) # owner r/w/x
+    chmod(outfile) # group, other according to config
     return run_script(prefix, name)
+
 
 def run_script(prefix, name):
     script = script_name(prefix, name)
@@ -32,6 +36,35 @@ def run_script(prefix, name):
     if process.stderr is not None:
         logging.error(process.stderr.decode('utf-8'))
     return process.returncode
+
+
+def chmod(path, group=''):
+    logging.info(f'  running chgrp/chmod on {path}')
+    if group != '':
+        group = config['ATS_ADMIN_GROUP']
+    
+    if group != '':
+        ex = 0o775
+        non_ex = 0o664
+    else:
+        ex = 0o755
+        non_ex = 0o644
+
+    for root, dirs, files in os.walk(path):
+        for d in dirs:
+            dirname = os.path.join(root, d)
+            os.chmod(dirname, ex)
+            if group != '':
+                shutil.chown(dirname, group=group)
+
+        for f in files:
+            filename = os.path.join(root, f)
+            if os.stat(filename).st_mode & 0o00100: # is owner-executable?
+                os.chmod(filename, ex)
+            else:
+                os.chmod(filename, non_ex)
+            if group != '':
+                shutil.chown(filename, group=group)
 
 
 def query_yes_no(question, default="yes"):
