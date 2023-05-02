@@ -4,7 +4,7 @@ import ats_manager
 
 def get_args():
     parser = argparse.ArgumentParser('Install ATS from a branch.')
-    ats_manager.get_install_args(parser, True)
+    ats_manager.get_install_args(parser, ats=True)
     args = parser.parse_args()
     args.modulefiles = args.modulefile
     del(args.modulefile)

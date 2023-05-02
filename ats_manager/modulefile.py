@@ -118,8 +118,7 @@ def tpls_modulefile_args(tpls_name,
                          repo_version,
                          tpls_build_type='opt',
                          trilinos_build_type='opt',
-                         modulefiles=None,
-                         **kwargs):
+                         modulefiles=None):
     temp_pars = dict()
     temp_pars['amanzi'] = tpls_name
     temp_pars['tpls_build_type'] = tpls_build_type
@@ -140,8 +139,7 @@ def modulefile_args(kind,
                     name,
                     repo_version,
                     tpls_modulefile,
-                    build_type='opt',
-                    **kwargs):
+                    build_type='opt'):
     temp_pars = dict()
     temp_pars['amanzi'] = name
     temp_pars['build_type'] = build_type

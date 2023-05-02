@@ -184,7 +184,10 @@ def install_tpls(args):
 def _check_or_install_tpls(args):
     tpls_version = names.tpls_version(args.repo_kind, args.repo)
     if args.tpls_build_type is None:
-        args.tpls_build_type = args.build_type
+        if args.build_type == 'opt':
+            args.tpls_build_type = 'opt'
+        else:
+            args.tpls_build_type = 'relwithdebinfo'
 
     tpls_name = names.name('amanzi-tpls', tpls_version,
                            args.machine, args.compiler_id, args.tpls_build_type)

@@ -1,18 +1,27 @@
 import argparse
 
-def get_install_args(parser, ats=False):
+    
+def get_install_args(parser, amanzi=False, ats=False):
     groups = dict()
+    amanzi = amanzi or ats
+
     # main names
-    parser.add_argument('build_name', type=str,
-                        help='Arbitrary name of the build.  Typically the branch name.')
+    if amanzi:
+        parser.add_argument('build_name', type=str,
+                            help='Arbitrary name of the build.  Typically the branch name.')
+    else:
+        parser.add_argument('repo_version', type=str,
+                            help='Hash or branch of the Amanzi repository from which to build TPLs')
 
     # control
     groups['control'] = parser.add_argument_group('control', 'flags for controlling the build process')
-    groups['control'].add_argument('--skip-amanzi-tests', action='store_true',
-                                   help='Skip running Amanzi tests.')
-    if ats:
-        groups['control'].add_argument('--skip-ats-tests', action='store_true',
-                            help='Skip running ATS tests.')
+    if amanzi:
+        groups['control'].add_argument('--skip-amanzi-tests', action='store_true',
+                                       help='Skip running Amanzi tests.')
+        if ats:
+            groups['control'].add_argument('--skip-ats-tests', action='store_true',
+                                           help='Skip running ATS tests.')
+
     skip_clobber = groups['control'].add_mutually_exclusive_group()
     skip_clobber.add_argument('--skip-clone', action='store_true',
                         help='Skip cloning (and use existing repos)')
@@ -27,20 +36,21 @@ def get_install_args(parser, ats=False):
                                    help="Type of wrappers used to find the wrapper executables.  Valid include:\n  mpi = mpicc, mpicxx, mpifort\n  intel = mpiicc, mpiicpc, mpiiftn\n  vendor = cc, CC, ftn")
     
     # branches
-    groups['branches'] = parser.add_argument_group('branches', 'current and new branch names')
-    groups['branches'].add_argument('--repo', type=str, default=None,
-                        help='Arbitrary name of the repository.  Typically the branch name.  Defaults to BUILD_NAME.')
-    groups['branches'].add_argument('--amanzi-branch', type=str, default=None,
-                        help='(Existing) branch or hash of Amanzi to check out.  Defaults to BUILD_NAME')
-    if ats:
-        groups['branches'].add_argument('--ats-branch', type=str, default=None,
-                            help='(Existing) branch or hash of ATS to check out.  Defaults to the hash of the submodule in AMANZI_BRANCH.')
-        
-    groups['branches'].add_argument('--new-amanzi-branch', type=str, default=None,
-                        help='Create a new branch of Amanzi, starting from AMANZI_BRANCH.')
-    if ats:
-        groups['branches'].add_argument('--new-ats-branch', type=str, default=None,
-                            help='Create a new branch of ATS, starting from ATS_BRANCH.')
+    if amanzi:
+        groups['branches'] = parser.add_argument_group('branches', 'current and new branch names')
+        groups['branches'].add_argument('--repo', type=str, default=None,
+                            help='Arbitrary name of the repository.  Typically the branch name.  Defaults to BUILD_NAME.')
+        groups['branches'].add_argument('--amanzi-branch', type=str, default=None,
+                            help='(Existing) branch or hash of Amanzi to check out.  Defaults to BUILD_NAME')
+        if ats:
+            groups['branches'].add_argument('--ats-branch', type=str, default=None,
+                                help='(Existing) branch or hash of ATS to check out.  Defaults to the hash of the submodule in AMANZI_BRANCH.')
+
+        groups['branches'].add_argument('--new-amanzi-branch', type=str, default=None,
+                            help='Create a new branch of Amanzi, starting from AMANZI_BRANCH.')
+        if ats:
+            groups['branches'].add_argument('--new-ats-branch', type=str, default=None,
+                                help='Create a new branch of ATS, starting from ATS_BRANCH.')
 
     # tpl control
     groups['tpls'] = parser.add_argument_group('TPLs', 'third party library controls')
@@ -57,18 +67,22 @@ def get_install_args(parser, ats=False):
     # build type
     valid_build_types = ['debug', 'opt', 'relwithdebinfo']
     groups['build_type'] = parser.add_argument_group('build_type', 'controls optimization flags')
-    groups['build_type'].add_argument('--build-type', type=str, default='debug', choices=valid_build_types,
-                        help='Amanzi build type')
-    groups['build_type'].add_argument('--tpls-build-type', type=str, default=None, choices=valid_build_types,
+    if amanzi:
+        groups['build_type'].add_argument('--build-type', type=str, default='debug', choices=valid_build_types,
+                                          help='Amanzi build type')
+        tpls_default = None
+    else:
+        tpls_default = 'relwithdebinfo'
+
+    groups['build_type'].add_argument('--tpls-build-type', type=str, default=tpls_default, choices=valid_build_types,
                                       help='TPLs build type')
     groups['build_type'].add_argument('--trilinos-build-type', type=str, default=None, choices=valid_build_types,
                                       help='TPLs build type')
 
     groups['build_type'].add_argument('--bootstrap-options', type=str, default='',
                                       help='Additional options passed to bootstrap')
-                                      
-
     return parser, groups
+
 
 def get_update_args(parser, ats=False):
     parser.add_argument('modulefile', type=str,
