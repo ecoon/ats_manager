@@ -66,7 +66,7 @@ def install_ats(args):
     logging.info('Generating module file:')    
     logging.info('  Fully resolved name: {}'.format(build_name))
     template_params = modulefile.create_modulefile(build_name, args.repo, tpls_name,
-                                                   args.build_type)
+                                                   build_type=args.build_type)
                                  
     # bootstrap
     logging.info('-----------------------------------------------------------------------------')

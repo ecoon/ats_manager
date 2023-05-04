@@ -144,9 +144,9 @@ def modulefile_args(kind,
     temp_pars['amanzi'] = name
     temp_pars['build_type'] = build_type
     temp_pars['tpls_modulefile'] = tpls_modulefile
-    temp_pars['amanzi_src_dir'] = names.amanzi_src_dir(repo_version)
-    temp_pars['amanzi_build_dir'] = names.amanzi_build_dir(name)
-    temp_pars['amanzi_dir'] = names.amanzi_install_dir(name)
+    temp_pars['amanzi_src_dir'] = names.amanzi_src_dir(kind, repo_version)
+    temp_pars['amanzi_build_dir'] = names.build_dir(name)
+    temp_pars['amanzi_dir'] = names.install_dir(name)
 
     if kind == 'ats':
         temp_pars['ats'] = name

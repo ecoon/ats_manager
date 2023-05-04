@@ -29,7 +29,7 @@ def tpls_src_dir(kind, version):
     return os.path.join(amanzi_src_dir(kind, version), 'config', 'SuperBuild')
 
 def ats_regression_tests_dir(version):
-    return os.path.join(ats_src_dir('ats', version), 'testing', 'ats-regression-tests')
+    return os.path.join(ats_src_dir(version), 'testing', 'ats-regression-tests')
 
 def tools_mpi_dir(vendor):
     return os.path.join(config['ATS_BASE'], 'tools', 'install', vendor)

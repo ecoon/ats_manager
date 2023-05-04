@@ -58,13 +58,14 @@ def chmod(path, group=''):
                 shutil.chown(dirname, group=group)
 
         for f in files:
-            filename = os.path.join(root, f)
-            if os.stat(filename).st_mode & 0o00100: # is owner-executable?
-                os.chmod(filename, ex)
-            else:
-                os.chmod(filename, non_ex)
-            if group != '':
-                shutil.chown(filename, group=group)
+            if not f.startswith('.#'): # dead files, go away
+                filename = os.path.join(root, f)
+                if os.stat(filename).st_mode & 0o00100: # is owner-executable?
+                    os.chmod(filename, ex)
+                else:
+                    os.chmod(filename, non_ex)
+                if group != '':
+                    shutil.chown(filename, group=group)
 
 
 def query_yes_no(question, default="yes"):
