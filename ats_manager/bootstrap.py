@@ -14,9 +14,11 @@ def _set_arg(args, key, val):
         
 
 _compiler_tmp = "--with-c-compiler={} --with-cxx-compiler={} --with-fort-compiler={}"
-def get_compilers(cc, cxx, ftn):
-    compilers = _compiler_tmp.format(cc, cxx, ftn)
-    if 'MPI_DIR' in os.environ:
+def get_compilers(compiler_names, mpi_dir):
+    compilers = _compiler_tmp.format(*compiler_names)
+    if mpi_dir is not None:
+        compilers += f' --with-mpi={mpi_dir}'
+    elif 'MPI_DIR' in os.environ:
         compilers += ' --with-mpi={}'.format(os.environ['MPI_DIR'])
     return compilers
 
@@ -109,7 +111,7 @@ def bootstrap_tpls(tpls_name, inargs):
     _set_arg(args, 'structured', inargs.enable_structured)
     _set_arg(args, 'geochemistry', inargs.enable_geochemistry)
 
-    args['compilers'] = get_compilers(*which_compilers(inargs.mpi_wrapper_kind))
+    args['compilers'] = get_compilers(which_compilers(inargs.mpi_wrapper_kind), inargs.mpi_dir)
     args['flags'] = inargs.bootstrap_options
 
     logging.info('  Filling bootstrap')
@@ -160,6 +162,7 @@ echo "-----------------------------------------------------"
     --disable-clm \
     --disable-ats_physics \
     --with-python={python_interp} \
+    {compilers} \
     {flags} \
     --tpl-config-file=${{AMANZI_TPLS_CONFIG}}
 
@@ -177,6 +180,8 @@ def bootstrap_amanzi(module_name, inargs):
 
     _set_arg(args, 'structured', inargs.enable_structured)
     _set_arg(args, 'geochemistry', inargs.enable_geochemistry)
+
+    args['compilers'] = get_compilers(which_compilers(inargs.mpi_wrapper_kind), inargs.mpi_dir)
     args['flags'] = inargs.bootstrap_options
 
     logging.info('Filling bootstrap')
@@ -229,6 +234,7 @@ echo "-----------------------------------------------------"
     --enable-reg_tests \
     --with-python={python_interp} \
     --ats_dev \
+    {compilers} \
     {flags} \
     --tpl-config-file=${{AMANZI_TPLS_CONFIG}}
 
@@ -245,6 +251,7 @@ def bootstrap_ats(module_name, inargs):
         args['shared_libs'] = '--enable-shared'
         
     _set_arg(args, 'geochemistry', inargs.enable_geochemistry)
+    args['compilers'] = get_compilers(which_compilers(inargs.mpi_wrapper_kind), inargs.mpi_dir)
     args['flags'] = inargs.bootstrap_options
 
         

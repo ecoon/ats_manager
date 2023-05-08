@@ -34,6 +34,8 @@ def get_install_args(parser, amanzi=False, ats=False):
     groups['control'].add_argument('--mpi-wrapper-kind', type=str, default='mpi',
                                    choices=['mpi','intel','vendor'],
                                    help="Type of wrappers used to find the wrapper executables.  Valid include:\n  mpi = mpicc, mpicxx, mpifort\n  intel = mpiicc, mpiicpc, mpiiftn\n  vendor = cc, CC, ftn")
+    groups['control'].add_argument('--mpi-dir', type=str, default=None,
+                                   help="Location of the MPI installation")
     
     # branches
     if amanzi:

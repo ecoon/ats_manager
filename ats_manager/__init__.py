@@ -78,7 +78,7 @@ def install_ats(args):
     # amanzi make tests
     if not args.skip_amanzi_tests:
         logging.info('Running tests:')
-        rc = test_runner.amanziUnitTests(name)
+        rc = test_runner.amanziUnitTests(build_name)
 
     return rc, build_name
 
@@ -146,7 +146,7 @@ def install_amanzi(args):
     # amanzi make tests
     if not args.skip_amanzi_tests:
         logging.info('Running tests:')
-        rc = test_runner.amanziUnitTests(name)
+        rc = test_runner.amanziUnitTests(build_name)
 
     return rc, build_name
 
