@@ -16,8 +16,8 @@ def get_install_args(parser, amanzi=False, ats=False):
     # control
     groups['control'] = parser.add_argument_group('control', 'flags for controlling the build process')
     if amanzi:
-        groups['control'].add_argument('--skip-amanzi-tests', action='store_true',
-                                       help='Skip running Amanzi tests.')
+        groups['control'].add_argument('--amanzi-tests', action='store_true',
+                                       help='Run Amanzi tests.')
         if ats:
             groups['control'].add_argument('--skip-ats-tests', action='store_true',
                                            help='Skip running ATS tests.')
@@ -58,8 +58,10 @@ def get_install_args(parser, amanzi=False, ats=False):
     groups['tpls'] = parser.add_argument_group('TPLs', 'third party library controls')
     groups['tpls'].add_argument('--modulefile', type=str, action='append', default=list(),
                                 help='Name of a modulefile to load, can appear multiple times.  Note this is unnecessary if the TPLs already exist.')
-    groups['tpls'].add_argument('--enable-geochemistry', action='store_true',
+    groups['tpls'].add_argument('--disable-geochemistry', action='store_true',
                         help='Build with geochemistry physics package')
+    groups['tpls'].add_argument('--force-tpls', action='store_true',
+                                help='Force re-bootstrapping of existing TPLs')
     if not ats:
         groups['tpls'].add_argument('--enable-structured', action='store_true',
                             help='Build with geochemistry physics package')

@@ -7,6 +7,7 @@ def get_args():
     ats_manager.get_install_args(parser, ats=True)
     args = parser.parse_args()
     args.modulefiles = args.modulefile
+    args.enable_geochemistry = not args.disable_geochemistry
     del(args.modulefile)
     return args
     

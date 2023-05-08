@@ -76,7 +76,7 @@ def install_ats(args):
     if rc != 0: return rc, build_name
 
     # amanzi make tests
-    if not args.skip_amanzi_tests:
+    if args.amanzi_tests:
         logging.info('Running tests:')
         rc = test_runner.amanziUnitTests(build_name)
 
@@ -144,7 +144,7 @@ def install_amanzi(args):
     if rc != 0: return rc, build_name
 
     # amanzi make tests
-    if not args.skip_amanzi_tests:
+    if args.amanzi_tests:
         logging.info('Running tests:')
         rc = test_runner.amanziUnitTests(build_name)
 
@@ -195,7 +195,7 @@ def _check_or_install_tpls(args):
     tpls_config_file = os.path.join(tpls_install_dir, 'share', 'cmake', 'amanzi-tpl-config.cmake')
     logging.info(f'Checking for TPLs at: {tpls_config_file}')
 
-    if os.path.isfile(tpls_config_file):
+    if os.path.isfile(tpls_config_file) and not args.force_tpls:
         logging.info('  FOUND... using existing TPLs')
         return 0, tpls_name
     else:
@@ -205,45 +205,32 @@ def _check_or_install_tpls(args):
         return install_tpls(args)
     
 
-def clean(module_name, remove=False, force=False):
+def clean(module_name, remove=False, source=False, force=False):
     """Cleans or completely removes a build.
 
     By defualt, this removes: 
-     * AMANZI_BUILD_DIR
-     * AMANZI_DIR
-     * AMANZI_TPLS_BUILD_DIR
-     * AMANZI_TPLS_DIR
+     * BUILD_DIR
+     * INSTALL_DIR
 
-    If remove == True, this also removes:
-     * AMANZI_SRC_DIR
+    If remove, this also removes:
      * modulefile
      * all bootstrap scripts
      * any test directories
 
     """
-    amanzi_install_dir = names.amanzi_install_dir(module_name)
+    amanzi_install_dir = names.install_dir(module_name)
     ats_clean.remove_dir(amanzi_install_dir, force)
 
-    amanzi_build_dir = names.amanzi_build_dir(module_name)
+    amanzi_build_dir = names.build_dir(module_name)
     ats_clean.remove_dir(amanzi_build_dir, force)
 
-    tpls_install_dir = names.tpls_install_dir(module_name)
-    ats_clean.remove_dir(tpls_install_dir, force)
-
-    tpls_build_dir = names.tpls_build_dir(module_name)
-    ats_clean.remove_dir(tpls_build_dir, force)
-
     if remove:
-        amanzi_src_dir = names.amanzi_src_dir(module_name)
-        ats_clean.remove_dir(amanzi_src_dir, force)
-
-        bootstrap_script = utils.script_name('bootstrap', module_name)
-        if os.path.exists(bootstrap_script):
-            os.remove(bootstrap_script)
+        bootstrap_script = utils.script_name('bootstrap', module_name.replace('/','-'))
+        outfile = os.path.join(os.environ['ATS_BASE'], 'scripts', bootstrap_script)
+        ats_clean.remove_file(outfile, force)
 
         modulefile = names.modulefile_path(module_name)
-        if os.path.exists(modulefile):
-            os.remove(modulefile)
+        ats_clean.remove_file(modulefile, force)
 
     return 0, module_name
     
