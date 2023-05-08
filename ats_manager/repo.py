@@ -80,6 +80,8 @@ def get_repo(repo_kind, repo_version,
     if new_ats_branch is not None:
         logging.info(f'   creating ATS branch: {new_ats_branch}')
         amanzi_repo.submodule(names.ats_submodule).module().git.checkout('-b', new_ats_branch)
+
+    utils.chmod(amanzi_repo)
     return amanzi_repo
 
 
