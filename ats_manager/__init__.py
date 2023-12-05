@@ -106,7 +106,7 @@ def install_amanzi(args):
 
     logging.info('Installing Amanzi:')
     logging.info('=============================================================================')
-    logging.info('Amanzi name: {}'.format(args.amanzi_name))
+    logging.info('Amanzi name: {}'.format(args.build_name))
     logging.info('Repo version: {}'.format(args.repo))
     logging.info('Amanzi branch: {}'.format(args.amanzi_branch))
     logging.info('Amanzi new branch: {}'.format(args.new_amanzi_branch))
@@ -134,7 +134,7 @@ def install_amanzi(args):
     logging.info('Generating module file:')    
     logging.info('  Fully resolved name: {}'.format(build_name))
     template_params = modulefile.create_modulefile(build_name, args.repo, tpls_name,
-                                                   args.build_type)
+                                                   build_type=args.build_type)
 
     # bootstrap
     logging.info('-----------------------------------------------------------------------------')
@@ -189,8 +189,11 @@ def _check_or_install_tpls(args):
         else:
             args.tpls_build_type = 'relwithdebinfo'
 
+    if args.trilinos_build_type is None:
+        args.trilinos_build_type = args.tpls_build_type
+            
     tpls_name = names.name('amanzi-tpls', tpls_version,
-                           args.machine, args.compiler_id, args.tpls_build_type)
+                           args.machine, args.compiler_id, args.trilinos_build_type)
     tpls_install_dir = names.install_dir(tpls_name)
     tpls_config_file = os.path.join(tpls_install_dir, 'share', 'cmake', 'amanzi-tpl-config.cmake')
     logging.info(f'Checking for TPLs at: {tpls_config_file}')
@@ -200,8 +203,6 @@ def _check_or_install_tpls(args):
         return 0, tpls_name
     else:
         args.tpls_version = tpls_version
-        if not hasattr(args, 'tpls_build_type'):
-            args.tpls_build_type = None
         return install_tpls(args)
     
 

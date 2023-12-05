@@ -57,22 +57,22 @@ def get_repo(repo_kind, repo_version,
              new_amanzi_branch=None,
              new_ats_branch=None):
     """Check or clone a repo, returns the path to the repo"""
-    amanzi_repo = names.amanzi_src_dir(repo_kind, repo_version)
-    logging.info(f'Setting up repo at: {amanzi_repo}')
+    amanzi_repo_path = names.amanzi_src_dir(repo_kind, repo_version)
+    logging.info(f'Setting up repo at: {amanzi_repo_path}')
     logging.info(f'   skip_clone = {skip_clone}, clobber = {clobber}')
     
     if skip_clone:
-        amanzi_repo = git.Repo(amanzi_repo)
+        amanzi_repo = git.Repo(amanzi_repo_path)
     else:
         if clobber:
-            logging.info(f'   clobbering dir: {amanzi_repo}')
-            ats_clean.remove_dir(amanzi_repo, True)
+            logging.info(f'   clobbering dir: {amanzi_repo_path}')
+            ats_clean.remove_dir(amanzi_repo_path, True)
 
         if amanzi_branch is None:
             amanzi_branch = repo_version
 
         logging.info(f'   switching to branches: {amanzi_branch}, {ats_branch}')
-        amanzi_repo = clone_amanzi_ats(amanzi_repo, amanzi_branch, ats_branch)
+        amanzi_repo = clone_amanzi_ats(amanzi_repo_path, amanzi_branch, ats_branch)
 
     if new_amanzi_branch is not None:
         logging.info(f'   creating Amanzi branch: {new_amanzi_branch}')
@@ -81,7 +81,7 @@ def get_repo(repo_kind, repo_version,
         logging.info(f'   creating ATS branch: {new_ats_branch}')
         amanzi_repo.submodule(names.ats_submodule).module().git.checkout('-b', new_ats_branch)
 
-    utils.chmod(amanzi_repo)
+    utils.chmod(amanzi_repo_path)
     return amanzi_repo
 
 
