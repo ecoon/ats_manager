@@ -63,6 +63,11 @@ _bootstrap_tpls_template = \
 if [ ! -z "${{MODULESHOME}}" ]; then
     source ${{MODULESHOME}}/init/profile
 fi
+
+if [ ! -z "${{ATS_BASE}}" ]; then
+    module use -a ${{ATS_BASE}}/modulefiles
+fi
+
 module load {module_name}
 
 cd ${{AMANZI_TPLS_SOURCE_DIR}}
@@ -81,7 +86,6 @@ echo "-----------------------------------------------------"
     --parallel=8 \
     {shared_libs} \
     {compilers} \
-    {flags} \
     --tpl-build-dir=${{AMANZI_TPLS_BUILD_DIR}} \
     --tpl-install-prefix=${{AMANZI_TPLS_DIR}} \
     --tpl-download-dir=${{ATS_BASE}}/amanzi-tpls/Downloads \
@@ -94,7 +98,8 @@ echo "-----------------------------------------------------"
     --enable-hypre \
     --enable-silo \
     --enable-clm \
-    --with-python={python_interp}
+    --with-python={python_interp} \
+    {flags}
 
 exit $?
 """ 
@@ -129,6 +134,10 @@ _bootstrap_amanzi_template = \
 
 if [ ! -z "${{MODULESHOME}}" ]; then
     source ${{MODULESHOME}}/init/profile
+fi
+
+if [ ! -z "${{ATS_BASE}}" ]; then
+    module use -a ${{ATS_BASE}}/modulefiles
 fi
 module load {module_name}
 
@@ -199,6 +208,10 @@ _bootstrap_ats_template = \
 
 if [ ! -z "${{MODULESHOME}}" ]; then
     source ${{MODULESHOME}}/init/profile
+fi
+
+if [ ! -z "${{ATS_BASE}}" ]; then
+    module use -a ${{ATS_BASE}}/modulefiles
 fi
 module load {module_name}
 

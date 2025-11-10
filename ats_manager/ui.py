@@ -105,7 +105,7 @@ def get_clean_args(parser):
     parser.add_argument('module_name', type=str,
                         help='Name of the modulefile (e.g. ats/master/debug)')
     parser.add_argument('-x', '--remove', action='store_true',
-                        help='Complete removal of the modulefile, repo, etc.')
+                        help='Additionally removes modulefile and bootstrap script.')
     parser.add_argument('-f', '--force', action='store_true',
                         help='Removes files and directories without prompting.')
     return
