@@ -114,7 +114,7 @@ def bootstrap_tpls(tpls_name, inargs):
         args['shared_libs'] = '--enable-shared'
 
     _set_arg(args, 'structured', inargs.enable_structured)
-    _set_arg(args, 'geochemistry', inargs.enable_geochemistry)
+    _set_arg(args, 'geochemistry', not inargs.disable_geochemistry)
 
     args['compilers'] = get_compilers(which_compilers(inargs.mpi_wrapper_kind), inargs.mpi_dir)
     args['flags'] = inargs.bootstrap_options

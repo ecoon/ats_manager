@@ -58,7 +58,7 @@ def install_ats(args):
     # TPL setup
     logging.info('-----------------------------------------------------------------------------')
     args.enable_structured = False
-    rc, tpls_name = _check_or_install_tpls(args)
+    rc, tpls_name = check_or_install_tpls(args)
     if rc != 0: return rc, tpls_name
 
     # modulefile setup
@@ -126,7 +126,7 @@ def install_amanzi(args):
 
     # TPL setup
     logging.info('-----------------------------------------------------------------------------')
-    rc, tpls_name = _check_or_install_tpls(args)
+    rc, tpls_name = check_or_install_tpls(args)
     if rc != 0: return rc, tpls_name
 
     # modulefile setup
@@ -161,7 +161,7 @@ def install_tpls(args):
     assert(args.tpls_build_type is not None)
     if args.trilinos_build_type is None:
         args.trilinos_build_type = args.tpls_build_type
-    
+
     tpls_name = names.name('amanzi-tpls', args.tpls_version,
                            args.machine, args.compiler_id, args.trilinos_build_type)
 
@@ -181,8 +181,17 @@ def install_tpls(args):
     return rc, tpls_name
 
 
-def _check_or_install_tpls(args):
-    tpls_version = names.tpls_version(args.repo_kind, args.repo)
+def check_or_install_tpls(args):
+    if args.repo is None:
+        args.repo = args.repo_version
+
+    tpls_version_override = getattr(args, 'tpls_version', None)
+    if tpls_version_override is not None:
+        logging.info(f'Overriding TPLs version: using {tpls_version_override} '
+                      f'instead of the version in TPLVersions.cmake')
+        tpls_version = tpls_version_override
+    else:
+        tpls_version = names.tpls_version(args.repo_kind, args.repo)
     if args.tpls_build_type is None:
         if args.build_type == 'opt':
             args.tpls_build_type = 'opt'
@@ -201,6 +210,12 @@ def _check_or_install_tpls(args):
     if os.path.isfile(tpls_config_file) and not args.force_tpls:
         logging.info('  FOUND... using existing TPLs')
         return 0, tpls_name
+    elif tpls_version_override is not None:
+        raise RuntimeError(f'--tpls-version={tpls_version_override} was given, but no '
+                            f'existing TPLs were found at {tpls_install_dir} '
+                            f'(looked for {tpls_config_file}).  --tpls-version requires '
+                            f'an already-installed TPLs set; use install_tpls.py to build '
+                            f'one first.')
     else:
         args.tpls_version = tpls_version
         return install_tpls(args)

@@ -70,7 +70,7 @@ def build_dir(name):
     return os.path.join(*args)
 
 def modulefile_path(name):
-    return os.path.join(config['ATS_BASE'], 'modulefiles', name)
+    return os.path.join(config['ATS_BASE'], 'modulefiles', name+'.lua')
 
 
 

@@ -38,10 +38,10 @@ def get_install_args(parser, amanzi=False, ats=False):
                                    help="Location of the MPI installation")
     
     # branches
+    groups['branches'] = parser.add_argument_group('branches', 'current and new branch names')
+    groups['branches'].add_argument('--repo', type=str, default=None,
+                                    help='Arbitrary name of the repository.  Typically the branch name.  Defaults to BUILD_NAME.')
     if amanzi:
-        groups['branches'] = parser.add_argument_group('branches', 'current and new branch names')
-        groups['branches'].add_argument('--repo', type=str, default=None,
-                            help='Arbitrary name of the repository.  Typically the branch name.  Defaults to BUILD_NAME.')
         groups['branches'].add_argument('--amanzi-branch', type=str, default=None,
                             help='(Existing) branch or hash of Amanzi to check out.  Defaults to BUILD_NAME')
         if ats:
@@ -53,6 +53,9 @@ def get_install_args(parser, amanzi=False, ats=False):
         if ats:
             groups['branches'].add_argument('--new-ats-branch', type=str, default=None,
                                 help='Create a new branch of ATS, starting from ATS_BRANCH.')
+    else:
+        groups['branches'].add_argument('--repo-kind', type=str, default='ats',
+                                        help='Build tpls from an "ats" or "amanzi" repo?  Defaults to "ats".')
 
     # tpl control
     groups['tpls'] = parser.add_argument_group('TPLs', 'third party library controls')
@@ -62,6 +65,13 @@ def get_install_args(parser, amanzi=False, ats=False):
                         help='Build with geochemistry physics package')
     groups['tpls'].add_argument('--force-tpls', action='store_true',
                                 help='Force re-bootstrapping of existing TPLs')
+    if amanzi:
+        groups['tpls'].add_argument('--tpls-version', type=str, default=None,
+                                    help='Override the TPLs version to use, instead of the version '
+                                         'found in the branch\'s own TPLVersions.cmake.  Use this to '
+                                         'try building against an already-installed, newer (or older) '
+                                         'set of TPLs, e.g. "0.98.14".  The TPLs must already be '
+                                         'installed; this does not build a new TPLs version.')
     if not ats:
         groups['tpls'].add_argument('--enable-structured', action='store_true',
                             help='Build with geochemistry physics package')

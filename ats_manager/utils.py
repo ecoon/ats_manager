@@ -60,10 +60,11 @@ def chmod(path, group=''):
         for f in files:
             if not f.startswith('.#'): # dead files, go away
                 filename = os.path.join(root, f)
-                if os.stat(filename).st_mode & 0o00100: # is owner-executable?
-                    os.chmod(filename, ex)
-                else:
-                    os.chmod(filename, non_ex)
+                if not os.path.islink(filename):
+                    if os.stat(filename).st_mode & 0o00100: # is owner-executable?
+                        os.chmod(filename, ex)
+                    else:
+                        os.chmod(filename, non_ex)
                 if group != '':
                     shutil.chown(filename, group=group)
 

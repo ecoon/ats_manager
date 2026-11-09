@@ -10,91 +10,75 @@ from ats_manager.config import config
 # Templates
 #
 _ats_template = \
-"""#%Module1.0#####################################################################
-##
-## modules modulefile
-##
-proc ModulesHelp {{ }} {{
-    global mpi_bin
+"""-- -*- lua -*-
+-- Lua modulefile for ATS
+help([[
+ATS {ats} repository, {build_type} build
+]])
 
-    puts stderr "\tATS {ats} repository, {build_type} build"
-    puts stderr ""
-}}
+whatis("ATS {ats} {build_type} build")
 
-module-whatis   "ATS {ats} {build_type} build"
-# #############################################################################
+load("{tpls_modulefile}")
 
-module load {tpls_modulefile}
+setenv("AMANZI_SRC_DIR", "{amanzi_src_dir}")
+setenv("AMANZI_BUILD_DIR", "{amanzi_build_dir}")
+setenv("AMANZI_DIR", "{amanzi_dir}")
 
-setenv AMANZI_SRC_DIR {amanzi_src_dir}
-setenv AMANZI_BUILD_DIR {amanzi_build_dir}
-setenv AMANZI_DIR {amanzi_dir}
+setenv("ATS_SRC_DIR", "{ats_src_dir}")
+setenv("ATS_BUILD_DIR", "{amanzi_build_dir}")
+setenv("ATS_DIR", "{amanzi_dir}")
 
-setenv ATS_SRC_DIR {ats_src_dir}
-setenv ATS_BUILD_DIR {amanzi_build_dir}
-setenv ATS_DIR {amanzi_dir}
+setenv("ATS_TESTS_DIR", "{ats_regression_tests_dir}")
 
-setenv ATS_TESTS_DIR {ats_regression_tests_dir}
+setenv("AMANZI_BUILD_TYPE", "{build_type}")
 
-setenv AMANZI_BUILD_TYPE {build_type}
-
-prepend-path    PATH            {amanzi_dir}/bin
-prepend-path    PYTHONPATH      {amanzi_src_dir}/tools/amanzi_xml
-prepend-path    PYTHONPATH      {ats_src_dir}/tools/utils
-prepend-path    PYTHONPATH      {ats_src_dir}/tools/ats_meshing/ats_meshing
+prepend_path("PATH", "{amanzi_dir}/bin")
+prepend_path("PYTHONPATH", "{amanzi_src_dir}/tools/amanzi_xml")
+prepend_path("PYTHONPATH", "{ats_src_dir}/tools/utils")
 """
 
 
 _amanzi_template = \
-"""#%Module1.0#####################################################################
-##
-## modules modulefile
-##
-proc ModulesHelp {{ }} {{
-    puts stderr "\tAmanzi {amanzi} repository, {build_type} build"
-    puts stderr ""
-}}
+"""-- Lua modulefile for Amanzi
+help([[
+Amanzi {amanzi} repository, {build_type} build
+]])
 
-module-whatis   "Amanzi {amanzi} {build_type} build"
-# #############################################################################
+whatis("Amanzi {amanzi} {build_type} build")
 
-module load {tpls_modulefile}
+load("{tpls_modulefile}")
 
-setenv AMANZI_SRC_DIR {amanzi_src_dir}
-setenv AMANZI_BUILD_DIR {amanzi_build_dir}
-setenv AMANZI_DIR {amanzi_dir}
+setenv("AMANZI_SRC_DIR", "{amanzi_src_dir}")
+setenv("AMANZI_BUILD_DIR", "{amanzi_build_dir}")
+setenv("AMANZI_DIR", "{amanzi_dir}")
 
-setenv AMANZI_BUILD_TYPE {build_type}
+setenv("AMANZI_BUILD_TYPE", "{build_type}")
 
-prepend-path    PATH            {amanzi_dir}/bin
-prepend-path    PYTHONPATH      {amanzi_src_dir}/tools/amanzi_xml
+prepend_path("PATH", "{amanzi_dir}/bin")
+prepend_path("PYTHONPATH", "{amanzi_src_dir}/tools/amanzi_xml")
 """    
 
 _tpls_template = \
-"""#%Module1.0#####################################################################
-##
-## modules modulefile
-##
-proc ModulesHelp {{ }} {{
-    puts stderr "\tAmanzi TPLs {amanzi} repository, {tpls_build_type} build"
-    puts stderr ""
-}}
+"""-- Lua modulefile for Amanzi TPLs
+help([[
+Amanzi TPLs {amanzi} repository, {tpls_build_type} build
+]])
 
-module-whatis   "Amanzi TPLs {amanzi} {tpls_build_type} build"
-# #############################################################################
+whatis("Amanzi TPLs {amanzi} {tpls_build_type} build")
 
 {modulefiles}
 
-setenv AMANZI_TPLS_DIR {tpls_dir}
-setenv AMANZI_TPLS_BUILD_DIR {tpls_build_dir}
-setenv AMANZI_TPLS_SOURCE_DIR {tpls_src_dir}
-setenv AMANZI_TPLS_CONFIG {tpls_dir}/share/cmake/amanzi-tpl-config.cmake
+setenv("AMANZI_TPLS_DIR", "{tpls_dir}")
+setenv("AMANZI_TPLS_BUILD_DIR", "{tpls_build_dir}")
+setenv("AMANZI_TPLS_SOURCE_DIR", "{tpls_src_dir}")
+setenv("AMANZI_TPLS_CONFIG", "{tpls_dir}/share/cmake/amanzi-tpl-config.cmake")
 
-setenv AMANZI_TPLS_BUILD_TYPE {tpls_build_type}
-setenv AMANZI_TRILINOS_BUILD_TYPE {trilinos_build_type}
+setenv("AMANZI_TPLS_BUILD_TYPE", "{tpls_build_type}")
+setenv("AMANZI_TRILINOS_BUILD_TYPE", "{trilinos_build_type}")
 
-prepend-path    PATH            {tpls_dir}/bin
-prepend-path    PYTHONPATH      {tpls_dir}/SEACAS/lib
+prepend_path("PATH", "{tpls_dir}/bin")
+prepend_path("PYTHONPATH", "{tpls_dir}/SEACAS/lib")
+
 """
 
 
@@ -125,7 +109,7 @@ def tpls_modulefile_args(tpls_name,
     temp_pars['trilinos_build_type'] = trilinos_build_type
 
     if modulefiles is not None:
-        temp_pars['modulefiles'] = '\n'.join(['module load {}'.format(mf) for mf in modulefiles])
+        temp_pars['modulefiles'] = '\n'.join(['load("{}")'.format(mf) for mf in modulefiles])
     else:
         temp_pars['modulefiles'] = ''
 
