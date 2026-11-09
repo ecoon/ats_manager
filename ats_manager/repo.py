@@ -1,6 +1,9 @@
 import os, shutil
 import logging
-import git
+try:
+    import git
+except ImportError:
+    git = None
 
 import ats_manager.names as names
 import ats_manager.utils as utils
@@ -8,6 +11,9 @@ from ats_manager.config import config
 
 def clone(name, url, path, branch='master'):
     """Generic clone helper"""
+    if git is None:
+        raise RuntimeError("No git python module exists")
+    
     if os.path.exists(path):
         raise RuntimeError("Cannot clone into {} as it already exists.".format(path))
 
@@ -58,6 +64,9 @@ def get_repo(repo_kind, repo_version,
              new_ats_branch=None):
     """Check or clone a repo, returns the path to the repo"""
     amanzi_repo_path = names.amanzi_src_dir(repo_kind, repo_version)
+    if git is None:
+        return amanzi_repo_path
+    
     logging.info(f'Setting up repo at: {amanzi_repo_path}')
     logging.info(f'   skip_clone = {skip_clone}, clobber = {clobber}')
     
@@ -82,7 +91,7 @@ def get_repo(repo_kind, repo_version,
         amanzi_repo.submodule(names.ats_submodule).module().git.checkout('-b', new_ats_branch)
 
     utils.chmod(amanzi_repo_path)
-    return amanzi_repo
+    return amanzi_repo_path
 
 
         

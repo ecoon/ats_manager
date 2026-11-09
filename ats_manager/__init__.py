@@ -1,5 +1,8 @@
 import os, shutil
-import git
+try:
+    import git
+except ImportError:
+    git = None
 import logging
 
 import ats_manager.repo as repo
