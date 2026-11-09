@@ -23,29 +23,54 @@ def get_compilers(compiler_names, mpi_dir):
     return compilers
 
 
-def _which(cc, cxx, ftn):
-    if cc is not None:
-        cc = shutil.which(cc)
-    if cxx is not None:
-        cxx = shutil.which(cxx)
-    if ftn is not None:
-        ftn = shutil.which(ftn)
+def _resolve_compiler(name, mpi_dir):
+    """Find the full path to a compiler/wrapper executable.
+
+    If mpi_dir is given, prefer {mpi_dir}/bin/{name} over PATH -- it is the
+    more specific, explicit choice. Fall back to `which` on PATH otherwise.
+    """
+    if name is None:
+        return None
+
+    if mpi_dir is not None:
+        candidate = os.path.join(mpi_dir, 'bin', name)
+        if shutil.which(candidate) is not None:
+            return candidate
+
+    found = shutil.which(name)
+    if found is not None:
+        return found
+
+    searched = f"{os.path.join(mpi_dir, 'bin', name)} or PATH" if mpi_dir is not None else "PATH"
+    raise FileNotFoundError(f"Could not find compiler/wrapper '{name}' (searched: {searched})")
+
+
+def _which(cc, cxx, ftn, mpi_dir=None):
+    cc = _resolve_compiler(cc, mpi_dir)
+    cxx = _resolve_compiler(cxx, mpi_dir)
+    ftn = _resolve_compiler(ftn, mpi_dir)
     return cc, cxx, ftn
 
 
-def which_compilers(family=None, cc=None, cxx=None, ftn=None):
-    cc1 = None,
+def which_compilers(family=None, cc=None, cxx=None, ftn=None, mpi_dir=None):
+    cc1 = None
     cxx1 = None
     ftn1 = None
-    
+
     if family == 'mpi':
         cc1 = 'mpicc'
         cxx1 = 'mpicxx'
         ftn1 = 'mpifort'
+    elif family == 'intel':
+        cc1 = 'mpiicc'
+        cxx1 = 'mpiicpc'
+        ftn1 = 'mpiifort'
     elif family == 'vendor':
         cc1 = 'cc'
         cxx1 = 'CC'
         ftn1 = 'ftn'
+        # vendor wrappers are module-provided, not under an MPI_DIR
+        mpi_dir = None
     elif family is None:
         pass
     else:
@@ -54,7 +79,7 @@ def which_compilers(family=None, cc=None, cxx=None, ftn=None):
     if cc is not None: cc1 = cc
     if cxx is not None: cxx1 = cxx
     if ftn is not None: ftn1 = ftn
-    return _which(cc1, cxx1, ftn1)
+    return _which(cc1, cxx1, ftn1, mpi_dir)
 
 
 _bootstrap_tpls_template = \
@@ -116,7 +141,7 @@ def bootstrap_tpls(tpls_name, inargs):
     _set_arg(args, 'structured', inargs.enable_structured)
     _set_arg(args, 'geochemistry', not inargs.disable_geochemistry)
 
-    args['compilers'] = get_compilers(which_compilers(inargs.mpi_wrapper_kind), inargs.mpi_dir)
+    args['compilers'] = get_compilers(which_compilers(inargs.mpi_wrapper_kind, mpi_dir=inargs.mpi_dir), inargs.mpi_dir)
     args['flags'] = inargs.bootstrap_options
 
     logging.info('  Filling bootstrap')
@@ -190,7 +215,7 @@ def bootstrap_amanzi(module_name, inargs):
     _set_arg(args, 'structured', inargs.enable_structured)
     _set_arg(args, 'geochemistry', inargs.enable_geochemistry)
 
-    args['compilers'] = get_compilers(which_compilers(inargs.mpi_wrapper_kind), inargs.mpi_dir)
+    args['compilers'] = get_compilers(which_compilers(inargs.mpi_wrapper_kind, mpi_dir=inargs.mpi_dir), inargs.mpi_dir)
     args['flags'] = inargs.bootstrap_options
 
     logging.info('Filling bootstrap')
@@ -264,7 +289,7 @@ def bootstrap_ats(module_name, inargs):
         args['shared_libs'] = '--enable-shared'
         
     _set_arg(args, 'geochemistry', inargs.enable_geochemistry)
-    args['compilers'] = get_compilers(which_compilers(inargs.mpi_wrapper_kind), inargs.mpi_dir)
+    args['compilers'] = get_compilers(which_compilers(inargs.mpi_wrapper_kind, mpi_dir=inargs.mpi_dir), inargs.mpi_dir)
     args['flags'] = inargs.bootstrap_options
 
         

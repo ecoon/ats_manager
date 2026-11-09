@@ -33,7 +33,7 @@ def get_install_args(parser, amanzi=False, ats=False):
                                    help='Identifying string for the compiler, MPI, or any other toolchain versions or identifiers that will ensure this is unique from all other builds of the same source.')
     groups['control'].add_argument('--mpi-wrapper-kind', type=str, default='mpi',
                                    choices=['mpi','intel','vendor'],
-                                   help="Type of wrappers used to find the wrapper executables.  Valid include:\n  mpi = mpicc, mpicxx, mpifort\n  intel = mpiicc, mpiicpc, mpiiftn\n  vendor = cc, CC, ftn")
+                                   help="Type of wrappers used to find the wrapper executables.  Valid include:\n  mpi = mpicc, mpicxx, mpifort\n  intel = mpiicc, mpiicpc, mpiifort\n  vendor = cc, CC, ftn")
     groups['control'].add_argument('--mpi-dir', type=str, default=None,
                                    help="Location of the MPI installation")
     
